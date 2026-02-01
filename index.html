@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎀 可爱猜数字游戏</title>
+    <title>猜数字游戏</title>
     <style>
         * {
             margin: 0;
@@ -16,10 +16,77 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
             padding: 20px;
             box-sizing: border-box;
+        }
+
+        /* 顶部统计区域 */
+        .stats-header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px 40px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto 20px auto;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-emoji {
+            font-size: 1em;
+        }
+
+        .header-text {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .main-wrapper {
@@ -27,9 +94,10 @@
             gap: 30px;
             max-width: 1400px;
             width: 100%;
-            height: calc(100vh - 40px);
+            flex: 1;
             align-items: stretch;
             justify-content: center;
+            margin: 0 auto;
         }
 
         /* 左侧：猜测记录 */
@@ -177,12 +245,22 @@
 
         .title {
             font-size: 2.5em;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            animation: rainbow 3s ease-in-out infinite;
+        }
+
+        .title-emoji {
+            font-size: 1em;
+        }
+
+        .title-text {
             background: linear-gradient(45deg, #ff6b6b, #feca57, #ff9ff3, #54a0ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 10px;
-            animation: rainbow 3s ease-in-out infinite;
         }
 
         @keyframes rainbow {
@@ -420,6 +498,30 @@
     </style>
 </head>
 <body>
+    <!-- 顶部统计区域 -->
+    <div class="stats-header">
+        <div class="header-left">
+            <h1 class="header-title">
+                <span class="header-emoji">🎮</span>
+                <span class="header-text">猜数字游戏</span>
+            </h1>
+        </div>
+        <div class="header-right">
+            <div class="stat-item">
+                <span class="stat-label">🎮 游戏次数</span>
+                <span class="stat-value" id="totalGames">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">🏆 胜利次数</span>
+                <span class="stat-value" id="winCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">📊 平均猜测</span>
+                <span class="stat-value" id="avgAttempts">0</span>
+            </div>
+        </div>
+    </div>
+
     <div class="main-wrapper">
         <!-- 左侧：猜测记录 -->
         <div class="left-panel">
@@ -436,7 +538,7 @@
             <!-- 游戏区域 -->
             <div class="game-container">
                 <div class="header">
-                    <h1 class="title">🎮 猜数字</h1>
+
                     <p class="subtitle">猜一个4位不重复的数字 ✨</p>
                 </div>
 
@@ -486,6 +588,46 @@
         let targetNumber = '';
         let attempts = 0;
         const maxAttempts = 10;
+        let gameStats = {
+            totalGames: 0,
+            winCount: 0,
+            totalAttemptsForWins: 0
+        };
+
+        // 加载统计数据
+        function loadStats() {
+            const savedStats = localStorage.getItem('guessGameStats');
+            if (savedStats) {
+                gameStats = JSON.parse(savedStats);
+                updateStatsDisplay();
+            }
+        }
+
+        // 保存统计数据
+        function saveStats() {
+            localStorage.setItem('guessGameStats', JSON.stringify(gameStats));
+        }
+
+        // 更新统计显示
+        function updateStatsDisplay() {
+            document.getElementById('totalGames').textContent = gameStats.totalGames;
+            document.getElementById('winCount').textContent = gameStats.winCount;
+            const avgAttempts = gameStats.winCount > 0 
+                ? (gameStats.totalAttemptsForWins / gameStats.winCount).toFixed(1)
+                : 0;
+            document.getElementById('avgAttempts').textContent = avgAttempts;
+        }
+
+        // 记录游戏结果
+        function recordGameResult(won, attemptCount) {
+            gameStats.totalGames++;
+            if (won) {
+                gameStats.winCount++;
+                gameStats.totalAttemptsForWins += attemptCount;
+            }
+            saveStats();
+            updateStatsDisplay();
+        }
 
         function generateRandomNumber() {
             const numbers = Array.from({length: 10}, (_, i) => i);
@@ -548,9 +690,11 @@
             updateUI(guess, bulls, cows);
             
             if (bulls === 4) {
+                recordGameResult(true, attempts);
                 showModal('win');
                 createConfetti();
             } else if (attempts >= maxAttempts) {
+                recordGameResult(false, attempts);
                 showModal('lose');
             }
             
@@ -604,7 +748,7 @@
             if (type === 'win') {
                 emoji.textContent = '🎉';
                 title.textContent = '恭喜你猜对了！';
-                text.innerHTML = `你在第 ${attempts} 次就猜中了答案 <strong>${targetNumber}</strong>！🌟`;
+                text.innerHTML = `你在第 ${attempts} 次猜中了答案 <strong>${targetNumber}</strong>！`;
             } else {
                 emoji.textContent = '😢';
                 title.textContent = '游戏结束';
@@ -640,10 +784,31 @@
             }
         }
 
-        // 实时统计字数
-        document.getElementById('notesTextarea').addEventListener('input', function() {
-            const count = this.value.length;
+        // 加载保存的笔记
+        function loadNotes() {
+            const savedNotes = localStorage.getItem('guessGameNotes');
+            if (savedNotes) {
+                document.getElementById('notesTextarea').value = savedNotes;
+                updateNotesCount();
+            }
+        }
+
+        // 保存笔记到本地
+        function saveNotes() {
+            const notes = document.getElementById('notesTextarea').value;
+            localStorage.setItem('guessGameNotes', notes);
+        }
+
+        // 更新字数统计
+        function updateNotesCount() {
+            const count = document.getElementById('notesTextarea').value.length;
             document.getElementById('notesCount').textContent = count + ' 字';
+        }
+
+        // 实时统计字数并保存
+        document.getElementById('notesTextarea').addEventListener('input', function() {
+            updateNotesCount();
+            saveNotes();
         });
 
         // 输入框自动跳转和限制
@@ -673,6 +838,12 @@
         // 初始化游戏
         targetNumber = generateRandomNumber();
         console.log('Debug - Target:', targetNumber);
+        
+        // 加载保存的笔记
+        loadNotes();
+        
+        // 加载统计数据
+        loadStats();
     </script>
 </body>
 </html>
