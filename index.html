@@ -478,7 +478,7 @@
             <div class="modal-emoji" id="modalEmoji">🎉</div>
             <h2 class="modal-title" id="modalTitle">恭喜你！</h2>
             <p class="modal-text" id="modalText">你猜对了！</p>
-            <button class="btn-restart" onclick="restartGame()">🔄 再玩一次</button>
+            <button class="btn-restart" onclick="restartGame()">再玩一次</button>
         </div>
     </div>
 
@@ -604,11 +604,11 @@
             if (type === 'win') {
                 emoji.textContent = '🎉';
                 title.textContent = '恭喜你猜对了！';
-                text.textContent = `你在第 ${attempts} 次就猜中了答案 ${targetNumber}！🌟`;
+                text.innerHTML = `你在第 ${attempts} 次就猜中了答案 <strong>${targetNumber}</strong>！🌟`;
             } else {
                 emoji.textContent = '😢';
                 title.textContent = '游戏结束';
-                text.textContent = `很遗憾，你没有在10次内猜对。答案是 ${targetNumber}`;
+                text.innerHTML = `很遗憾，你没有在10次内猜对。答案是 <strong>${targetNumber}</strong>`;
             }
             
             modal.style.display = 'flex';
