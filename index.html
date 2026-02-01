@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎀 可爱猜数字游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .main-wrapper {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
+            width: 100%;
+            height: calc(100vh - 40px);
+            align-items: stretch;
+            justify-content: center;
+        }
+
+        /* 左侧：猜测记录 */
+        .left-panel {
+            width: 280px;
+            flex-shrink: 0;
+        }
+
+        /* 中间：游戏主界面 */
+        .center-panel {
+            flex: 0 0 auto;
+        }
+
+        /* 右侧：笔记 */
+        .right-panel {
+            width: 300px;
+            flex-shrink: 0;
+        }
+
+        .history-section-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 1.5em;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .history-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .history-item {
+            background: linear-gradient(135deg, #fff5f5 0%, #fff9f9 100%);
+            padding: 12px 15px;
+            border-radius: 15px;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .guess-number {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            letter-spacing: 3px;
+            flex-shrink: 0;
+        }
+
+        .result-badges {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .badge-bull {
+            background: #4ade80;
+            color: white;
+        }
+
+        .badge-cow {
+            background: #fbbf24;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+            font-style: italic;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,182,193,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(30px, 30px) rotate(180deg); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #ff9ff3, #54a0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            animation: rainbow 3s ease-in-out infinite;
+        }
+
+        @keyframes rainbow {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(30deg); }
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .attempts-info {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .attempt-badge {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            color: #d63031;
+            box-shadow: 0 4px 15px rgba(252, 182, 159, 0.4);
+        }
+
+        .input-section {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .digit-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .digit-input {
+            width: 60px;
+            height: 70px;
+            font-size: 2em;
+            text-align: center;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            background: white;
+            transition: all 0.3s ease;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .digit-input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-guess {
+            width: 100%;
+            padding: 15px 30px;
+            font-size: 1.3em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-guess:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-guess:active {
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.95em;
+            min-height: 20px;
+        }
+
+        /* 笔记区域 */
+        .notes-section-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notes-textarea-main {
+            width: 100%;
+            padding: 15px;
+            border: 3px solid #ffe4e1;
+            border-radius: 15px;
+            font-size: 0.95em;
+            font-family: 'Segoe UI', sans-serif;
+            resize: none;
+            background: white;
+            transition: all 0.3s ease;
+            line-height: 1.5;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .notes-textarea-main:focus {
+            outline: none;
+            border-color: #ff9ff3;
+            box-shadow: 0 5px 20px rgba(255, 159, 243, 0.2);
+        }
+
+        .notes-textarea-main::placeholder {
+            color: #ccc;
+            font-style: italic;
+        }
+
+        .notes-footer-main {
+            margin-top: 10px;
+            text-align: right;
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            max-width: 400px;
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-emoji {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .modal-text {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+
+        .btn-restart {
+            padding: 15px 40px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-restart:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
+        }
+
+        /* 彩带动画 */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            position: absolute;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* 摇晃动画 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <!-- 左侧：猜测记录 -->
+        <div class="left-panel">
+            <div class="history-section-container">
+                <h2 class="panel-title">📋 记录</h2>
+                <div class="history-section" id="history">
+                    <div class="empty-state">🌟 开始你的第一次猜测吧！</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间：游戏主界面 -->
+        <div class="center-panel">
+            <!-- 游戏区域 -->
+            <div class="game-container">
+                <div class="header">
+                    <h1 class="title">🎮 猜数字</h1>
+                    <p class="subtitle">猜一个4位不重复的数字 ✨</p>
+                </div>
+
+                <div class="attempts-info">
+                    <div class="attempt-badge">🎯 机会: <span id="attemptsLeft">10</span>/10</div>
+                </div>
+
+                <div class="input-section">
+                    <div class="digit-inputs">
+                        <input type="text" class="digit-input" maxlength="1" id="digit1" autocomplete="off">
+                        <input type="text" class="digit-input" maxlength="1" id="digit2" autocomplete="off">
+                        <input type="text" class="digit-input" maxlength="1" id="digit3" autocomplete="off">
+                        <input type="text" class="digit-input" maxlength="1" id="digit4" autocomplete="off">
+                    </div>
+                    <button class="btn-guess" onclick="makeGuess()">提交</button>
+                    <div class="error-message" id="errorMsg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：笔记 -->
+        <div class="right-panel">
+            <div class="notes-section-container">
+                <h2 class="panel-title">📝 笔记</h2>
+                <textarea 
+                    class="notes-textarea-main" 
+                    id="notesTextarea" 
+                    placeholder="在这里记录你的想法和推理💭"></textarea>
+                <div class="notes-footer-main">
+                    <span id="notesCount">0 字</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏结束弹窗 -->
+    <div class="modal" id="gameModal">
+        <div class="modal-content">
+            <div class="modal-emoji" id="modalEmoji">🎉</div>
+            <h2 class="modal-title" id="modalTitle">恭喜你！</h2>
+            <p class="modal-text" id="modalText">你猜对了！</p>
+            <button class="btn-restart" onclick="restartGame()">🔄 再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        let targetNumber = '';
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        function generateRandomNumber() {
+            const numbers = Array.from({length: 10}, (_, i) => i);
+            for (let i = numbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+            }
+            return numbers.slice(0, 4).join('');
+        }
+
+        function checkGuess(guess, target) {
+            let bulls = 0;
+            let cows = 0;
+            for (let i = 0; i < 4; i++) {
+                if (guess[i] === target[i]) {
+                    bulls++;
+                } else if (target.includes(guess[i])) {
+                    cows++;
+                }
+            }
+            return { bulls, cows };
+        }
+
+        function validateInput(guess) {
+            const errorMsg = document.getElementById('errorMsg');
+            
+            if (!/^\d{4}$/.test(guess)) {
+                errorMsg.textContent = '❌ 请输入4位数字！';
+                return false;
+            }
+            
+            const uniqueDigits = new Set(guess);
+            if (uniqueDigits.size !== 4) {
+                errorMsg.textContent = '❌ 数字不能重复！';
+                return false;
+            }
+            
+            errorMsg.textContent = '';
+            return true;
+        }
+
+        function makeGuess() {
+            const digits = [
+                document.getElementById('digit1').value,
+                document.getElementById('digit2').value,
+                document.getElementById('digit3').value,
+                document.getElementById('digit4').value
+            ];
+            
+            const guess = digits.join('');
+            
+            if (!validateInput(guess)) {
+                shakeInputs();
+                return;
+            }
+
+            attempts++;
+            const { bulls, cows } = checkGuess(guess, targetNumber);
+            
+            updateUI(guess, bulls, cows);
+            
+            if (bulls === 4) {
+                showModal('win');
+                createConfetti();
+            } else if (attempts >= maxAttempts) {
+                showModal('lose');
+            }
+            
+            clearInputs();
+        }
+
+        function updateUI(guess, bulls, cows) {
+            document.getElementById('attemptsLeft').textContent = maxAttempts - attempts;
+            
+            const history = document.getElementById('history');
+            
+            if (attempts === 1) {
+                history.innerHTML = '';
+            }
+            
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.innerHTML = `
+                <span class="guess-number">${guess}</span>
+                <div class="result-badges">
+                    <span class="badge badge-bull">${bulls}个完全正确</span>
+                    <span class="badge badge-cow">${cows}个仅数字正确</span>
+                </div>
+            `;
+            
+            history.appendChild(historyItem);
+        }
+
+        function shakeInputs() {
+            const inputs = document.querySelectorAll('.digit-input');
+            inputs.forEach(input => {
+                input.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    input.style.animation = '';
+                }, 500);
+            });
+        }
+
+        function clearInputs() {
+            const inputs = document.querySelectorAll('.digit-input');
+            inputs.forEach(input => input.value = '');
+            inputs[0].focus();
+        }
+
+        function showModal(type) {
+            const modal = document.getElementById('gameModal');
+            const emoji = document.getElementById('modalEmoji');
+            const title = document.getElementById('modalTitle');
+            const text = document.getElementById('modalText');
+            
+            if (type === 'win') {
+                emoji.textContent = '🎉';
+                title.textContent = '恭喜你猜对了！';
+                text.textContent = `你在第 ${attempts} 次就猜中了答案 ${targetNumber}！🌟`;
+            } else {
+                emoji.textContent = '😢';
+                title.textContent = '游戏结束';
+                text.textContent = `很遗憾，你没有在10次内猜对。答案是 ${targetNumber}`;
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function restartGame() {
+            document.getElementById('gameModal').style.display = 'none';
+            targetNumber = generateRandomNumber();
+            attempts = 0;
+            document.getElementById('attemptsLeft').textContent = maxAttempts;
+            document.getElementById('history').innerHTML = '<div class="empty-state">🌟 开始你的第一次猜测吧！</div>';
+            document.getElementById('errorMsg').textContent = '';
+            clearInputs();
+        }
+
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 50);
+            }
+        }
+
+        // 实时统计字数
+        document.getElementById('notesTextarea').addEventListener('input', function() {
+            const count = this.value.length;
+            document.getElementById('notesCount').textContent = count + ' 字';
+        });
+
+        // 输入框自动跳转和限制
+        const inputs = document.querySelectorAll('.digit-input');
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', function(e) {
+                // 只允许数字
+                this.value = this.value.replace(/[^0-9]/g, '');
+                
+                if (this.value.length === 1) {
+                    if (index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                }
+            });
+            
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value === '' && index > 0) {
+                    inputs[index - 1].focus();
+                }
+                if (e.key === 'Enter') {
+                    makeGuess();
+                }
+            });
+        });
+
+        // 初始化游戏
+        targetNumber = generateRandomNumber();
+        console.log('Debug - Target:', targetNumber);
+    </script>
+</body>
+</html>
